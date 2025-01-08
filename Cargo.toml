@@ -3,4 +3,16 @@ name = "quickie"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+defaults = ["std"]
+std = []
+serde = ["dep:serde"]
+
 [dependencies]
+serde = { version = "1.0.217", default-features = false, features = ["alloc"], optional = true }
+
+[dev-dependencies]
+serde_test = "1.0"
+
+# [target.'cfg(loom)'.dev-dependencies]
+# loom = "0.7"
