@@ -1,11 +1,13 @@
-use super::Buf;
-use crate::buf::{IntoIter, UninitSlice};
-use crate::bytes::Vtable;
+extern crate alloc;
+
+use super::buf::{IntoIter, UninitSlice};
+use super::bytes::Vtable;
 #[allow(unused)]
-use crate::quick::sync::atomic::AtomicMut;
-use crate::quick::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
-use crate::BufMut;
-use crate::{offset_from, Bytes};
+use super::quick::sync::atomic::AtomicMut;
+use super::quick::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
+use super::Buf;
+use super::BufMut;
+use super::{offset_from, Bytes};
 use alloc::{
     borrow::{Borrow, BorrowMut},
     boxed::Box,
@@ -413,7 +415,7 @@ impl BytesMut {
     }
 
     #[inline]
-    pub(crate) fn from_vec(vec: Vec<u8>) -> BytesMut {
+    pub(super) fn from_vec(vec: Vec<u8>) -> BytesMut {
         let mut vec = ManuallyDrop::new(vec);
         let ptr = vptr(vec.as_mut_ptr());
         let len = vec.len();
@@ -446,7 +448,7 @@ impl BytesMut {
     //
     // SAFETY:
     // The caller must ensure that `count` <= `self.cap`
-    pub(crate) unsafe fn advance_unchecked(&mut self, count: usize) {
+    pub(super) unsafe fn advance_unchecked(&mut self, count: usize) {
         if count == 0 {
             return;
         }
@@ -600,7 +602,7 @@ impl Buf for BytesMut {
         };
     }
 
-    fn copy_to_bytes(&mut self, len: usize) -> crate::bytes::Bytes {
+    fn copy_to_bytes(&mut self, len: usize) -> super::bytes::Bytes {
         self.split_to(len).freeze()
     }
 }
@@ -871,7 +873,7 @@ unsafe fn increment_shared(ptr: *mut Shared) {
     let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);
 
     if old_size > isize::MAX as usize {
-        crate::abort();
+        super::abort();
     }
 }
 

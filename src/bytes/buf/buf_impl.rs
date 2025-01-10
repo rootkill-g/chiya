@@ -1,7 +1,11 @@
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
+
 use super::{reader, take, Chain, Reader, Take};
 #[cfg(feature = "std")]
-use crate::{min_u64_usize, saturating_sub_usize_u64};
-use crate::{panic_advance, panic_does_not_fit};
+use crate::bytes::{min_u64_usize, saturating_sub_usize_u64};
+use crate::bytes::{panic_advance, panic_does_not_fit, Bytes, BytesMut};
 use alloc::boxed::Box;
 #[cfg(feature = "std")]
 use std::io::IoSlice;
@@ -329,14 +333,14 @@ pub trait Buf {
     }
 
     /// Consumes `len` bytes inside self and returns new instance of `Bytes` with this data.
-    fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
+    fn copy_to_bytes(&mut self, len: usize) -> Bytes {
         use super::BufMut;
 
         if self.remaining() < len {
             panic_advance(len, self.remaining());
         }
 
-        let mut ret = crate::BytesMut::with_capacity(len);
+        let mut ret = BytesMut::with_capacity(len);
 
         ret.put(self.take(len));
 
@@ -535,7 +539,7 @@ macro_rules! deref_forward_buf {
         }
 
         #[inline]
-        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
+        fn copy_to_bytes(&mut self, len: usize) -> Bytes {
             (**self).copy_to_bytes(len)
         }
     };

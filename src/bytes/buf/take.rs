@@ -1,4 +1,4 @@
-use crate::Buf;
+use crate::bytes::{Buf, Bytes};
 use core::cmp;
 
 /// A `Buf` adapter which limits the bytes read from an underlying buffer.
@@ -62,7 +62,7 @@ where
         self.limit -= cnt;
     }
 
-    fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
+    fn copy_to_bytes(&mut self, len: usize) -> Bytes {
         assert!(len <= self.remaining(), "`len` greater than remaining");
 
         let r = self.inner.copy_to_bytes(len);

@@ -1,3 +1,5 @@
+extern crate alloc;
+
 use super::Buf;
 use alloc::collections::VecDeque;
 

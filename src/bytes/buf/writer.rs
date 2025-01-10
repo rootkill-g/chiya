@@ -1,4 +1,8 @@
-use crate::BufMut;
+#[cfg(feature = "std")]
+extern crate std;
+
+use crate::bytes::BufMut;
+#[cfg(feature = "std")]
 use std::{cmp, io};
 
 /// A `ButMut` adapter which implements `io::Write` for the inner value

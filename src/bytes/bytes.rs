@@ -1,8 +1,12 @@
-use crate::buf::IntoIter;
-#[allow(unused)]
-use crate::quick::sync::atomic::AtomicMut;
-use crate::quick::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
-use crate::{bytes_mut::BytesMut, offset_from, Buf};
+extern crate alloc;
+
+use super::quick::sync::atomic::AtomicMut;
+use super::{
+    buf::{Buf, IntoIter},
+    bytes_mut::BytesMut,
+    offset_from,
+    quick::sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
+};
 use alloc::{
     alloc::{dealloc, Layout},
     borrow::Borrow,
@@ -746,7 +750,7 @@ unsafe fn owned_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes
     let old_cnt = ref_cnt.fetch_add(1, Ordering::Relaxed);
 
     if old_cnt > usize::MAX >> 1 {
-        crate::abort()
+        super::abort()
     }
 
     Bytes {
@@ -1094,7 +1098,7 @@ unsafe fn shallow_clone_arc(shared: *mut Shared, ptr: *const u8, len: usize) -> 
     let old_size = (*shared).ref_cnt.load(Ordering::Relaxed);
 
     if old_size > usize::MAX >> 1 {
-        crate::abort();
+        super::abort();
     }
 
     Bytes {

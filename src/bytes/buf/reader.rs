@@ -1,4 +1,8 @@
-use crate::Buf;
+#[cfg(feature = "std")]
+extern crate std;
+
+use crate::bytes::Buf;
+#[cfg(feature = "std")]
 use std::{cmp, io};
 
 /// A `Buf` adapter which implements `io::Read` for the inner value
