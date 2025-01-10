@@ -22,6 +22,8 @@ use core::{
     slice, usize,
 };
 
+/// A unique reference to a contiguous slice of memory
+#[derive(Debug)]
 pub struct BytesMut {
     ptr: NonNull<u8>,
     len: usize,
@@ -58,31 +60,37 @@ const PTR_WIDTH: usize = 32;
 
 // ---- impl BytesMut ----
 impl BytesMut {
+    /// Creates a new `BytesMut` with default capacity
     #[inline]
     pub fn new() -> BytesMut {
         BytesMut::with_capacity(0)
     }
 
+    /// Creates a new `BytesMut` with the specified capacity
     #[inline]
     pub fn with_capacity(capacity: usize) -> BytesMut {
         BytesMut::from_vec(Vec::with_capacity(capacity))
     }
 
+    /// Returns the number of bytes contained in this `BytesMut`
     #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
+    /// Returns true if the `BytesMut` has a length of 0
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
+    /// Returns the number of bytes the `BytesMut` can hold without reallocating
     #[inline]
     pub fn capacity(&self) -> usize {
         self.cap
     }
 
+    /// Converts `self` into an immutable `Bytes`
     #[inline]
     pub fn freeze(self) -> Bytes {
         let bytes = ManuallyDrop::new(self);
@@ -107,10 +115,12 @@ impl BytesMut {
         }
     }
 
+    /// Creates a new `BytesMut` containing `len` zeroes
     pub fn zeroed(len: usize) -> BytesMut {
         BytesMut::from_vec(vec![0; len])
     }
 
+    /// Splits the bytes into two at the given index
     #[must_use = "consider BytesMut::truncate if you don't need the other half"]
     pub fn split_off(&mut self, at: usize) -> BytesMut {
         assert!(
@@ -134,6 +144,7 @@ impl BytesMut {
         }
     }
 
+    /// Removes the bytes from the current view, returning them in a new `BytesMut` handle
     #[must_use = "consider BytesMut::clear if you don't need the other half"]
     pub fn split(&mut self) -> BytesMut {
         let len = self.len();
@@ -141,6 +152,7 @@ impl BytesMut {
         self.split_to(len)
     }
 
+    /// Splits the buffer into two at the given index
     #[must_use = "consider BytesMut::advance if you don't need the other half"]
     pub fn split_to(&mut self, at: usize) -> BytesMut {
         assert!(
@@ -164,6 +176,7 @@ impl BytesMut {
         }
     }
 
+    /// Shortens the buffer, keeping the first `len` bytes and dropping the rest
     pub fn truncate(&mut self, len: usize) {
         if len <= self.len() {
             // SAFETY: Shrinking the buffer cannot expose the uninitialized bytes
@@ -171,11 +184,13 @@ impl BytesMut {
         }
     }
 
+    /// Clears the buffer, removing all the data. Existing capacity is preserved
     pub fn clear(&mut self) {
         // SAFETY: Setting the length to zero cannot expose uninitialized bytes
         unsafe { self.set_len(0) };
     }
 
+    /// Resizes the buffer so that `len` is equal to `new_len`
     pub fn resize(&mut self, new_len: usize, value: u8) {
         let additional = if let Some(additional) = new_len.checked_sub(self.len()) {
             additional
@@ -202,6 +217,7 @@ impl BytesMut {
         unsafe { self.set_len(new_len) };
     }
 
+    /// Sets the length of the buffer
     #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
         debug_assert!(len <= self.cap, "set_len out of bounds");
@@ -209,6 +225,7 @@ impl BytesMut {
         self.len = len
     }
 
+    /// Reserves capacity for at least `additional` more bytes to be inserted into the given `BytesMut`
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         let len = self.len();
@@ -224,6 +241,8 @@ impl BytesMut {
         let _ = self.reserve_inner(additional, true);
     }
 
+    /// In separate function to allow the short-circuits in `reserve` and `try_reclaim` to be
+    /// inline-able. Significantly helps performance. Returns false if the operation fails
     #[inline]
     pub fn reserve_inner(&mut self, additional: usize, allocate: bool) -> bool {
         let len = self.len();
@@ -347,6 +366,8 @@ impl BytesMut {
         return true;
     }
 
+    /// Attempts to cheaply reclaim already allocated capacity for at least `additional` more bytes
+    /// to be inserted into the given `BytesMut` and returns true if the operation succeeds
     #[inline]
     #[must_use = "consider BytesMut::reserve if you need an infallible reservation"]
     pub fn try_reclaim(&mut self, additional: usize) -> bool {
@@ -360,6 +381,7 @@ impl BytesMut {
         self.reserve_inner(additional, true)
     }
 
+    /// Appends the given bytes to this `BytesMut`
     #[inline]
     pub fn extend_from_slice(&mut self, extend: &[u8]) {
         let cnt = extend.len();
@@ -377,6 +399,7 @@ impl BytesMut {
         unsafe { self.advance_mut(cnt) };
     }
 
+    /// Absorbs a `BytesMut` that was previously split off
     pub fn unsplit(&mut self, other: BytesMut) {
         if self.is_empty() {
             *self = other;
@@ -407,6 +430,7 @@ impl BytesMut {
         }
     }
 
+    /// Returns a slice representing the `BytesMut`
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
@@ -520,6 +544,7 @@ impl BytesMut {
         self.data = invalid_ptr((pos << VEC_POS_OFFSET) | (self.data as usize & NOT_VEC_POS_MASK))
     }
 
+    /// Returns the remaining spare capacity of the buffer as a slice of `MaybeUninit<u8>`
     #[inline]
     pub fn spare_capacity_mut(&mut self) -> &mut [MaybeUninit<u8>] {
         unsafe {

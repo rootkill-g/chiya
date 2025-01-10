@@ -7,20 +7,24 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+//! Module provides abstractions for working with bytes
+
 extern crate alloc;
 
+/// Using `std` crate for when the feature `std` is enabled
 #[cfg(feature = "std")]
 extern crate std;
 
+/// Importing and using the `buf` module and it's adapters
 pub mod buf;
 pub use crate::buf::{Buf, BufMut};
 
 mod bytes;
 mod bytes_mut;
+mod quick;
+
 pub use bytes::Bytes;
 pub use bytes_mut::BytesMut;
-
-pub mod quick;
 
 #[cold]
 fn panic_advance(idx: usize, len: usize) -> ! {
@@ -46,6 +50,17 @@ fn saturating_sub_usize_u64(a: usize, b: u64) -> usize {
     match usize::try_from(b) {
         Ok(b) => a.saturating_sub(b),
         Err(_) => 0,
+    }
+}
+
+#[inline]
+#[cfg(feature = "std")]
+fn min_u64_usize(a: u64, b: usize) -> usize {
+    use core::convert::TryFrom;
+
+    match usize::try_from(a) {
+        Ok(a) => usize::min(a, b),
+        Err(_) => b,
     }
 }
 

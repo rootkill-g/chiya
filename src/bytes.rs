@@ -19,6 +19,8 @@ use core::{
     slice,
 };
 
+/// A cheaply cloneable and sliceable chunk of contiguous memory.
+#[derive(Debug)]
 pub struct Bytes {
     ptr: *const u8,
     len: usize,
@@ -35,6 +37,7 @@ pub(crate) struct Vtable {
 }
 
 impl Bytes {
+    /// Creates a new empty `Bytes`
     #[inline]
     pub const fn new() -> Self {
         const EMPTY: &[u8] = &[];
@@ -42,6 +45,7 @@ impl Bytes {
         Bytes::from_static(EMPTY)
     }
 
+    /// Creates a new `Bytes` from a static slice
     #[inline]
     pub const fn from_static(bytes: &'static [u8]) -> Self {
         Bytes {
@@ -52,6 +56,7 @@ impl Bytes {
         }
     }
 
+    /// Creates a new `Bytes` with length zero and the given pointer as the address
     fn new_empty_with_ptr(ptr: *const u8) -> Self {
         debug_assert!(!ptr.is_null());
 
@@ -65,6 +70,7 @@ impl Bytes {
         }
     }
 
+    /// Create [Bytes] with a buffer whose lifetime is controlled via an explicit owner
     pub fn from_owner<T>(owner: T) -> Self
     where
         T: AsRef<[u8]> + Send + 'static,
@@ -92,24 +98,30 @@ impl Bytes {
         ret
     }
 
+    /// Returns the number of bytes contained in this `Bytes`
     #[inline]
     pub const fn len(&self) -> usize {
         self.len
     }
 
+    /// Returns true if the `Bytes` has a length of 0
     #[inline]
     pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 
+    /// Returns true if this is the only reference to the data and `Into<BytesMut>` would avoid
+    /// cloning the underlying buffer
     pub fn is_unique(&self) -> bool {
         unsafe { (self.vtable.is_unique)(&self.data) }
     }
 
+    /// Creates `Bytes` instance from slice, by copying it
     pub fn copy_from_slice(data: &[u8]) -> Self {
         data.to_vec().into()
     }
 
+    /// Returns a slice of self for the provided range
     pub fn slice(&self, range: impl RangeBounds<usize>) -> Self {
         use core::ops::Bound;
 
@@ -151,6 +163,7 @@ impl Bytes {
         ret
     }
 
+    /// Returns a slice of self that is equivalent to the given `subset`
     pub fn slice_ref(&self, subset: &[u8]) -> Self {
         if subset.is_empty() {
             return Bytes::new();
@@ -183,6 +196,7 @@ impl Bytes {
         self.slice(subset_offset..(subset_offset + subset_len))
     }
 
+    /// Splits the `Bytes` into two at the given index
     #[must_use = "consider Bytes::truncate if you don't need the other half"]
     pub fn split_off(&mut self, at: usize) -> Self {
         if at == self.len() {
@@ -209,6 +223,7 @@ impl Bytes {
         ret
     }
 
+    /// Splits the `Bytes` into two at the given index
     #[must_use = "consider Bytes::advance if you don't need the other half"]
     pub fn split_to(&mut self, at: usize) -> Self {
         if at == self.len() {
@@ -237,6 +252,7 @@ impl Bytes {
         ret
     }
 
+    /// Shortens the buffer, keeping the first `len` bytes and dropping the remaining
     #[inline]
     pub fn truncate(&mut self, len: usize) {
         if len < self.len {
@@ -250,11 +266,13 @@ impl Bytes {
         }
     }
 
+    /// Clears the buffer, removing all data
     #[inline]
     pub fn clear(&mut self) {
         self.truncate(0);
     }
 
+    /// Try to convert self ([`Bytes`]) into `ByesMut`
     pub fn try_into_mut(self) -> Result<BytesMut, Bytes> {
         if self.is_unique() {
             Ok(self.into())
@@ -278,6 +296,7 @@ impl Bytes {
         }
     }
 
+    /// Returns slice of the `Bytes` with all data
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.ptr, self.len) }

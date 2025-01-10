@@ -1,6 +1,6 @@
-use super::{take, Chain, Take};
+use super::{reader, take, Chain, Reader, Take};
 #[cfg(feature = "std")]
-use crate::saturating_sub_usize_u64;
+use crate::{min_u64_usize, saturating_sub_usize_u64};
 use crate::{panic_advance, panic_does_not_fit};
 use alloc::boxed::Box;
 #[cfg(feature = "std")]
@@ -68,12 +68,18 @@ fn sign_extend(val: u64, nbytes: usize) -> i64 {
     (val << shift) as i64 >> shift
 }
 
+/// Read bytes from a buffer
 pub trait Buf {
+    /// Returns the number of bytes between current position and the end of the buffer
     fn remaining(&self) -> usize;
 
+    /// Returns a slice starting at the current position and of length between 0 and
+    /// `Buf::remaining()`. Note that this *can* return a shorter slice
+    /// (this allows non-continuous internal representation)
     #[cfg_attr(docsrs, doc(alias = "bytes"))]
     fn chunk(&self) -> &[u8];
 
+    /// Fills `dst` with potentially multiple slices starting at `self`'s current position
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn chunks_vectored<'a>(&'a self, dst: &mut [IoSlice<'a>]) -> usize {
@@ -89,12 +95,15 @@ pub trait Buf {
         }
     }
 
+    /// Advance the internal cursor of the `Buf`
     fn advance(&mut self, cnt: usize);
 
+    /// Returns true if there are any more bytes to consume
     fn has_remaining(&self) -> bool {
         self.remaining() > 0
     }
 
+    /// Copies bytes from `self` to `dst`
     fn copy_to_slice(&mut self, mut dst: &mut [u8]) {
         if self.remaining() < dst.len() {
             panic_advance(dst.len(), self.remaining());
@@ -111,6 +120,7 @@ pub trait Buf {
         }
     }
 
+    /// Gets an unsigned 8 bit integer from `self`.
     fn get_u8(&mut self) -> u8 {
         if self.remaining() < 1 {
             panic_advance(1, 0);
@@ -120,6 +130,7 @@ pub trait Buf {
         ret
     }
 
+    /// Gets a signed 8 bit integer from `self`.
     fn get_i8(&mut self) -> i8 {
         if self.remaining() < 1 {
             panic_advance(1, 0);
@@ -129,110 +140,137 @@ pub trait Buf {
         ret
     }
 
+    /// Gets an unsigned 16 bit integer from `self` in big-endian byte order.
     fn get_u16(&mut self) -> u16 {
         buf_get_impl!(self, u16::from_be_bytes);
     }
 
+    /// Gets an unsigned 16 bit integer from `self` in little-endian byte order.
     fn get_u16_le(&mut self) -> u16 {
         buf_get_impl!(self, u16::from_le_bytes);
     }
 
+    /// Gets an unsigned 16 bit integer from `self` in native-endian byte order.
     fn get_u16_ne(&mut self) -> u16 {
         buf_get_impl!(self, u16::from_ne_bytes);
     }
 
+    /// Gets an signed 16 bit integer from `self` in big-endian byte order.
     fn get_i16(&mut self) -> i16 {
         buf_get_impl!(self, i16::from_be_bytes);
     }
 
+    /// Gets an signed 16 bit integer from `self` in little-endian byte order.
     fn get_i16_le(&mut self) -> i16 {
         buf_get_impl!(self, i16::from_le_bytes);
     }
 
+    /// Gets an signed 16 bit integer from `self` in native-endian byte order.
     fn get_i16_ne(&mut self) -> i16 {
         buf_get_impl!(self, i16::from_ne_bytes);
     }
 
+    /// Gets an unsigned 32 bit integer from `self` in the big-endian byte order.
     fn get_u32(&mut self) -> u32 {
         buf_get_impl!(self, u32::from_be_bytes);
     }
 
+    /// Gets an unsigned 32 bit integer from `self` in the little-endian byte order.
     fn get_u32_le(&mut self) -> u32 {
         buf_get_impl!(self, u32::from_le_bytes);
     }
 
+    /// Gets an unsigned 32 bit integer from `self` in the native-endian byte order.
     fn get_u32_ne(&mut self) -> u32 {
         buf_get_impl!(self, u32::from_ne_bytes);
     }
 
+    /// Gets an signed 32 bit integer from `self` in the big-endian byte order.
     fn get_i32(&mut self) -> i32 {
         buf_get_impl!(self, i32::from_be_bytes);
     }
 
+    /// Gets an signed 32 bit integer from `self` in the little-endian byte order.
     fn get_i32_le(&mut self) -> i32 {
         buf_get_impl!(self, i32::from_le_bytes);
     }
 
+    /// Gets an signed 32 bit integer from `self` in the native-endian byte order.
     fn get_i32_ne(&mut self) -> i32 {
         buf_get_impl!(self, i32::from_ne_bytes);
     }
 
+    /// Gets an unsigned 64 bit integer from `self` in big-endian byte order.
     fn get_u64(&mut self) -> u64 {
         buf_get_impl!(self, u64::from_be_bytes);
     }
 
+    /// Gets an unsigned 64 bit integer from `self` in little-endian byte order.
     fn get_u64_le(&mut self) -> u64 {
         buf_get_impl!(self, u64::from_le_bytes);
     }
 
+    /// Gets an unsigned 64 bit integer from `self` in native-endian byte order.
     fn get_u64_ne(&mut self) -> u64 {
         buf_get_impl!(self, u64::from_ne_bytes);
     }
 
+    /// Gets an signed 64 bit integer from `self` in big-endian byte order.
     fn get_i64(&mut self) -> i64 {
         buf_get_impl!(self, i64::from_be_bytes);
     }
 
+    /// Gets an signed 64 bit integer from `self` in little-endian byte order.
     fn get_i64_le(&mut self) -> i64 {
         buf_get_impl!(self, i64::from_le_bytes);
     }
 
+    /// Gets an signed 64 bit integer from `self` in native-endian byte order.
     fn get_i64_ne(&mut self) -> i64 {
         buf_get_impl!(self, i64::from_ne_bytes);
     }
 
+    /// Gets an unsigned 128 bit integer from `self` in big-endian byte order.
     fn get_u128(&mut self) -> u128 {
         buf_get_impl!(self, u128::from_be_bytes);
     }
 
+    /// Gets an unsigned 128 bit integer from `self` in little-endian byte order.
     fn get_u128_le(&mut self) -> u128 {
         buf_get_impl!(self, u128::from_le_bytes);
     }
 
+    /// Gets an unsigned 128 bit integer from `self` in native-endian byte order.
     fn get_u128_ne(&mut self) -> u128 {
         buf_get_impl!(self, u128::from_ne_bytes);
     }
 
+    /// Gets an signed 128 bit integer from `self` in big-endian byte order.
     fn get_i128(&mut self) -> i128 {
         buf_get_impl!(self, i128::from_be_bytes);
     }
 
+    /// Gets an signed 128 bit integer from `self` in little-endian byte order.
     fn get_i128_le(&mut self) -> i128 {
         buf_get_impl!(self, i128::from_le_bytes);
     }
 
+    /// Gets an signed 128 bit integer from `self` in native-endian byte order.
     fn get_i128_ne(&mut self) -> i128 {
         buf_get_impl!(self, i128::from_ne_bytes);
     }
 
+    /// Gets an unsigned n-byte integer from `self` in big-endian byte order.
     fn get_uint(&mut self, nbytes: usize) -> u64 {
         buf_get_impl!(be => self, u64, nbytes);
     }
 
+    /// Gets an unsigned n-byte integer from `self` in little-endian byte order.
     fn get_uint_le(&mut self, nbytes: usize) -> u64 {
         buf_get_impl!(le => self, u64, nbytes);
     }
 
+    /// Gets an unsigned n-byte integer from `self` in native-endian byte order.
     fn get_uint_ne(&mut self, nbytes: usize) -> u64 {
         if cfg!(target_endian = "big") {
             self.get_uint(nbytes)
@@ -241,14 +279,17 @@ pub trait Buf {
         }
     }
 
+    /// Gets an signed n-byte integer from `self` in big-endian byte order.
     fn get_int(&mut self, nbytes: usize) -> i64 {
         sign_extend(self.get_uint(nbytes), nbytes)
     }
 
+    /// Gets an signed n-byte integer from `self` in little-endian byte order.
     fn get_int_le(&mut self, nbytes: usize) -> i64 {
         sign_extend(self.get_uint_le(nbytes), nbytes)
     }
 
+    /// Gets an signed n-byte integer from `self` in native-endian byte order.
     fn get_int_ne(&mut self, nbytes: usize) -> i64 {
         if cfg!(target_endian = "big") {
             self.get_int(nbytes)
@@ -257,30 +298,37 @@ pub trait Buf {
         }
     }
 
+    /// Gets an IEEE754 single-precision (4 bytes) floating point number from `self` in big-endian byte order.
     fn get_f32(&mut self) -> f32 {
         f32::from_bits(self.get_u32())
     }
 
+    /// Gets an IEEE754 single-precision (4 bytes) floating point number from `self` in little-endian byte order.
     fn get_f32_le(&mut self) -> f32 {
         f32::from_bits(self.get_u32_le())
     }
 
+    /// Gets an IEEE754 single-precision (4 bytes) floating point number from `self` in native-endian byte order.
     fn get_f32_ne(&mut self) -> f32 {
         f32::from_bits(self.get_u32_ne())
     }
 
+    /// Gets an IEEE754 double-precision (8 bytes) floating point number from `self` in big-endian byte order.
     fn get_f64(&mut self) -> f64 {
         f64::from_bits(self.get_u64())
     }
 
+    /// Gets an IEEE754 double-precision (8 bytes) floating point number from `self` in little-endian-endian byte order.
     fn get_f64_le(&mut self) -> f64 {
         f64::from_bits(self.get_u64_le())
     }
 
+    /// Gets an IEEE754 double-precision (8 bytes) floating point number from `self` in native-endian byte order.
     fn get_f64_ne(&mut self) -> f64 {
         f64::from_bits(self.get_u64_ne())
     }
 
+    /// Consumes `len` bytes inside self and returns new instance of `Bytes` with this data.
     fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
         use super::BufMut;
 
@@ -295,6 +343,7 @@ pub trait Buf {
         ret.freeze()
     }
 
+    /// Creates an adaptor which will read at most `limit` bytes from `self`.
     fn take(self, limit: usize) -> Take<Self>
     where
         Self: Sized,
@@ -302,6 +351,7 @@ pub trait Buf {
         take::new(self, limit)
     }
 
+    /// Creates an adaptor which will chain this buffer with another.
     fn chain<U>(self, next: U) -> Chain<Self, U>
     where
         U: Buf,
@@ -310,6 +360,7 @@ pub trait Buf {
         Chain::new(self, next)
     }
 
+    /// Creates an adaptor which implements the `Read` trait for `self`.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn reader(self) -> Reader<Self>
@@ -525,7 +576,7 @@ impl Buf for &[u8] {
     }
 
     #[inline]
-    fn copy_to_slice(&mut self, mut dst: &mut [u8]) {
+    fn copy_to_slice(&mut self, dst: &mut [u8]) {
         if self.len() < dst.len() {
             panic_advance(dst.len(), self.len());
         }

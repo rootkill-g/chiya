@@ -1,6 +1,7 @@
 use super::{BufMut, UninitSlice};
 use core::cmp;
 
+/// A `ButMut` adapter which limits the amount of bytes that can be written to an underlying buffer
 #[derive(Debug)]
 pub struct Limit<T> {
     inner: T,
@@ -12,22 +13,27 @@ pub(super) fn new<T>(inner: T, limit: usize) -> Limit<T> {
 }
 
 impl<T> Limit<T> {
+    /// Consumes the `Limit`, returning the underlying value
     pub fn into_inner(self) -> T {
         self.inner
     }
 
+    /// Gets a reference to the underlying `BufMut`.
     pub fn get_ref(&self) -> &T {
         &self.inner
     }
 
+    /// Gets a mutable reference to the underlying `BufMut`
     pub fn get_mut(&mut self) -> &mut T {
         &mut self.inner
     }
 
+    /// Returns the maximum number of bytes that can be written
     pub fn limit(&self) -> usize {
         self.limit
     }
 
+    /// Sets the maximum number of bytes that can be written
     pub fn set_limit(&mut self, limit: usize) {
         self.limit = limit
     }

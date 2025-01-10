@@ -1,9 +1,13 @@
 use super::{uninit_slice::UninitSlice, Buf, BufMut, IntoIter};
 use crate::{Bytes, BytesMut};
-
 #[cfg(feature = "std")]
 use std::io::IoSlice;
 
+/// A `Chain` sequences two buffers:
+///
+/// `Chain` is an adapter that links two underlying buffers and provides a continuous view across
+/// both buffers. It is able to seuence either immutable buffers ([`Buf`] values) or mutable
+/// buffers ([`BufMut`] values).
 #[derive(Debug)]
 pub struct Chain<T, U> {
     a: T,
@@ -11,26 +15,32 @@ pub struct Chain<T, U> {
 }
 
 impl<T, U> Chain<T, U> {
+    /// Creates a new `Chain` sequencing the provided values
     pub(crate) fn new(a: T, b: U) -> Chain<T, U> {
         Chain { a, b }
     }
 
+    /// Gets a reference to the first underlying `Buf`
     pub fn first_ref(&self) -> &T {
         &self.a
     }
 
+    /// Gets a mutable reference to the first underlying `Buf`
     pub fn first_mut(&mut self) -> &mut T {
         &mut self.a
     }
 
+    /// Gets a reference to the last underlying `Buf`
     pub fn last_ref(&self) -> &U {
         &self.b
     }
 
+    /// Gets a mutable reference to the last underlying `Buf`
     pub fn last_mut(&mut self) -> &mut U {
         &mut self.b
     }
 
+    /// Consumes the `Chain`, returning the underlying values
     pub fn into_inner(self) -> (T, U) {
         (self.a, self.b)
     }

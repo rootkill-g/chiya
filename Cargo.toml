@@ -2,9 +2,10 @@
 name = "quickie"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.84.0"
 
 [features]
-defaults = ["std"]
+default = ["std"]
 std = []
 serde = ["dep:serde"]
 
@@ -13,6 +14,3 @@ serde = { version = "1.0.217", default-features = false, features = ["alloc"], o
 
 [dev-dependencies]
 serde_test = "1.0"
-
-# [target.'cfg(loom)'.dev-dependencies]
-# loom = "0.7"
