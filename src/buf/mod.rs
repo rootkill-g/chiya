@@ -31,3 +31,6 @@ pub use self::take::Take;
 /// Module for Reader
 pub mod reader;
 pub use self::reader::Reader;
+
+/// Module for VecDeque
+pub mod vec_deque;
