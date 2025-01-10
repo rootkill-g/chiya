@@ -24,7 +24,6 @@ use core::{
 };
 
 /// A cheaply cloneable and sliceable chunk of contiguous memory.
-#[derive(Debug)]
 pub struct Bytes {
     ptr: *const u8,
     len: usize,

@@ -25,7 +25,6 @@ use core::{
 };
 
 /// A unique reference to a contiguous slice of memory
-#[derive(Debug)]
 pub struct BytesMut {
     ptr: NonNull<u8>,
     len: usize,
