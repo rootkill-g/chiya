@@ -10,6 +10,10 @@ extern crate std;
 pub mod buf;
 pub use buf::{Buf, BufMut};
 
+/// Importing and using the `fmt` module and it's adapters
+pub mod fmt;
+//pub use fmt::
+
 mod bytes;
 mod bytes_mut;
 mod quick;

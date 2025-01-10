@@ -11,4 +11,7 @@
 //! Quickie is a Web Framework designed to set you up quickly to get on with development instead of
 //! worrying about adding bazzillion crates with specific features
 
+extern crate alloc;
+extern crate std;
+
 mod bytes;

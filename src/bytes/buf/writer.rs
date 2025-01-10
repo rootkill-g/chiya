@@ -1,6 +1,3 @@
-#[cfg(feature = "std")]
-extern crate std;
-
 use crate::bytes::BufMut;
 #[cfg(feature = "std")]
 use std::{cmp, io};

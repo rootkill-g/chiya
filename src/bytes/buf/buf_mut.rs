@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use super::{limit, Buf, Chain, Limit, UninitSlice};
 #[cfg(feature = "std")]
 use crate::bytes::buf::{writer, Writer};

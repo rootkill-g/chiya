@@ -1,7 +1,3 @@
-extern crate alloc;
-#[cfg(feature = "std")]
-extern crate std;
-
 use super::{reader, take, Chain, Reader, Take};
 #[cfg(feature = "std")]
 use crate::bytes::{min_u64_usize, saturating_sub_usize_u64};

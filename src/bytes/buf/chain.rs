@@ -1,6 +1,3 @@
-#[cfg(feature = "std")]
-extern crate std;
-
 use super::{uninit_slice::UninitSlice, Buf, BufMut, IntoIter};
 use crate::bytes::{Bytes, BytesMut};
 #[cfg(feature = "std")]
