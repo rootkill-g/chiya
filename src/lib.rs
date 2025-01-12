@@ -1,5 +1,6 @@
 #![allow(unused)]
 #![allow(unknown_lints, unexpected_cfgs)]
+#![allow(unconditional_recursion)]
 #![warn(missing_docs, missing_debug_implementations, rust_2021_idioms)]
 #![doc(test(
     no_crate_inject,
