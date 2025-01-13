@@ -1,2 +1,2 @@
-# quickie
-A quick smol HTTP server
+# chiya
+A non-blocking, blazing fast HTTP server
