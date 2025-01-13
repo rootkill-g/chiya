@@ -1,2 +1,2 @@
 # chiya
-A non-blocking, blazing fast HTTP server
+A non-blocking, blazing fast Web Framework
