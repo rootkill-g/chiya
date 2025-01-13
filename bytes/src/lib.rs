@@ -1,3 +1,14 @@
+#![allow(unused)]
+#![allow(unknown_lints, unexpected_cfgs)]
+#![allow(unconditional_recursion)]
+#![warn(missing_docs, missing_debug_implementations, rust_2021_idioms)]
+#![doc(test(
+    no_crate_inject,
+    attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
+))]
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 //! Module provides abstractions for working with bytes
 
 extern crate alloc;
@@ -12,7 +23,6 @@ pub use buf::{Buf, BufMut};
 
 /// Importing and using the `fmt` module and it's adapters
 pub mod fmt;
-//pub use fmt::
 
 mod bytes;
 mod bytes_mut;
@@ -21,6 +31,7 @@ mod quick;
 pub use bytes::Bytes;
 pub use bytes_mut::BytesMut;
 
+/// Panic with an understandable message
 #[cold]
 pub fn panic_advance(idx: usize, len: usize) -> ! {
     panic!(

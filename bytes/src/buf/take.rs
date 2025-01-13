@@ -1,4 +1,4 @@
-use crate::bytes::{Buf, Bytes};
+use crate::{Buf, Bytes};
 use core::cmp;
 
 /// A `Buf` adapter which limits the bytes read from an underlying buffer.

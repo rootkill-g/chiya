@@ -1,4 +1,4 @@
-use crate::bytes::Buf;
+use crate::Buf;
 #[cfg(feature = "std")]
 use std::{cmp, io};
 

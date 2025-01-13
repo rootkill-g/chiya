@@ -1,5 +1,5 @@
 use super::{uninit_slice::UninitSlice, Buf, BufMut, IntoIter};
-use crate::bytes::{Bytes, BytesMut};
+use crate::{Bytes, BytesMut};
 #[cfg(feature = "std")]
 use std::io::IoSlice;
 

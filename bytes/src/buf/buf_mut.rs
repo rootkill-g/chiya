@@ -1,7 +1,7 @@
 use super::{limit, Buf, Chain, Limit, UninitSlice};
 #[cfg(feature = "std")]
-use crate::bytes::buf::{writer, Writer};
-use crate::bytes::{panic_advance, panic_does_not_fit};
+use crate::buf::{writer, Writer};
+use crate::{panic_advance, panic_does_not_fit};
 use alloc::{boxed::Box, vec::Vec};
 use core::{
     mem::{self, MaybeUninit},

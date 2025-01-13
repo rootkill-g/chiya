@@ -1,16 +1,29 @@
-[package]
-name = "quickie"
+[workspace]
+resolver = '2'
+members = [ "bytes" , "date"]
+
+[workspace.package]
+name = "chiya"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.84.0"
+authors = [ "Harsh Kumar Moroliya <hkmoroliya@gmail.com>" ]
+keywords = [ 
+  "bytes",
+  "date",
+  "time",
+  "datetime",
+  "chiya",
+  "non-blocking",
+  "web",
+  "http",
+  "server",
+  "async",
+  "async_io",
+  "threads",
+  "runtime"
+]
 
-[features]
-default = ["std"]
-std = []
-serde = ["dep:serde"]
-
-[dependencies]
-serde = { version = "1.0.217", default-features = false, features = ["alloc"], optional = true }
-
-[dev-dependencies]
-serde_test = "1.0"
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1

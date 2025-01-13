@@ -1,4 +1,4 @@
-use crate::bytes::BufMut;
+use crate::BufMut;
 #[cfg(feature = "std")]
 use std::{cmp, io};
 

@@ -1,4 +1,5 @@
-use crate::bytes::{fmt::BytesRef, Bytes, BytesMut};
+use super::BytesRef;
+use crate::{Bytes, BytesMut};
 use core::fmt::{write, Formatter, LowerHex, Result, UpperHex};
 
 impl LowerHex for BytesRef<'_> {

@@ -1,7 +1,7 @@
 use super::{reader, take, Chain, Reader, Take};
 #[cfg(feature = "std")]
-use crate::bytes::{min_u64_usize, saturating_sub_usize_u64};
-use crate::bytes::{panic_advance, panic_does_not_fit, Bytes, BytesMut};
+use crate::{min_u64_usize, saturating_sub_usize_u64};
+use crate::{panic_advance, panic_does_not_fit, Bytes, BytesMut};
 use alloc::boxed::Box;
 #[cfg(feature = "std")]
 use std::io::IoSlice;
