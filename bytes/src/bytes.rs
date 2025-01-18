@@ -1,12 +1,5 @@
 extern crate alloc;
 
-use super::quick::sync::atomic::AtomicMut;
-use super::{
-    buf::{Buf, IntoIter},
-    bytes_mut::BytesMut,
-    offset_from,
-    quick::sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
-};
 use alloc::{
     alloc::{dealloc, Layout},
     borrow::Borrow,
@@ -21,6 +14,14 @@ use core::{
     ops::{Deref, RangeBounds},
     ptr::{self, NonNull},
     slice,
+};
+
+use super::quick::sync::atomic::AtomicMut;
+use super::{
+    buf::{Buf, IntoIter},
+    bytes_mut::BytesMut,
+    offset_from,
+    quick::sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
 };
 
 /// A cheaply cloneable and sliceable chunk of contiguous memory.

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "bytes" , "date" , "io", "net"]
+members = [ "bytes" , "date" ]
 
 [workspace.package]
 rust-version = "1.84.0"

@@ -1,2 +1,2 @@
 # chiya
-A non-blocking, blazing fast Web Framework
+A Blazing Fast Web Framework
