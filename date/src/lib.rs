@@ -1,4 +1,6 @@
 #![allow(unused)]
+#![feature(coroutines, coroutine_trait, stmt_expr_attributes)]
+
 mod date_time;
 mod date_time_error;
 
@@ -8,7 +10,8 @@ use std::{
     cell::UnsafeCell,
     fmt::{self, Write},
     sync::{Arc, LazyLock},
-    time::SystemTime,
+    thread,
+    time::{Duration, SystemTime},
 };
 
 /// Date length: "Wed, 01 Jan 2025 00:00:00 GMT".len() = 29
@@ -16,6 +19,15 @@ const DATE_VALUE_LENGTH: usize = 29;
 
 static CURRENT_DATE: LazyLock<Arc<DataWrap>> = LazyLock::new(|| {
     let date = Arc::new(DataWrap(UnsafeCell::new(Date::now())));
+    let date_clone = date.clone();
+
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(500));
+
+        loop {
+            unsafe { &mut *(date_clone.0).get() }.update()
+        }
+    });
 
     date
 });
@@ -41,10 +53,6 @@ impl Date {
         let mut date = Date {
             bytes: [0; DATE_VALUE_LENGTH],
         };
-        let t = SystemTime::now();
-        let date_time = DateTime::from(t);
-
-        write!(date, "{}", date_time).unwrap();
 
         date
     }
@@ -52,6 +60,13 @@ impl Date {
     #[inline]
     fn as_bytes(&self) -> &[u8] {
         &self.bytes
+    }
+
+    #[inline]
+    fn update(&mut self) {
+        let date_time = DateTime::from(SystemTime::now());
+
+        write!(self, "{}", date_time).unwrap();
     }
 }
 
