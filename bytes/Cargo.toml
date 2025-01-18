@@ -1,8 +1,7 @@
 [package]
 name = "bytes"
 version = "1.0.0"
-edition = "2021"
-rust-version = "1.84.0"
+edition = "2024"
 description = "Types and Traits for working with bytes"
 authors = [ "Harsh Kumar Moroliya <hkmoroliya@gmail.com>" ]
 keywords = [ "zero-copy", "buffers", "bytes", "io" ]
@@ -10,7 +9,5 @@ keywords = [ "zero-copy", "buffers", "bytes", "io" ]
 [features]
 default = ["std"]
 std = []
-serde = ["dep:serde"]
 
 [dependencies]
-serde = { version = "1.0.217", default-features = false, features = ["alloc"], optional = true }
