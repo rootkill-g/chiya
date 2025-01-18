@@ -33,7 +33,7 @@ macro_rules! buf_get_impl {
             return $typ::$conv(buf);
         }
     }};
-    (le => $this:ident, $typ:tt, $len_to_read:expr) => {{
+    (le => $this:ident, $typ:tt, $len_to_read:expr_2021) => {{
         const SIZE: usize = core::mem::size_of::<$typ>();
 
         // The same trick as above does not improve the best case speed.
@@ -48,7 +48,7 @@ macro_rules! buf_get_impl {
         $this.copy_to_slice(subslice);
         return $typ::from_le_bytes(buf);
     }};
-    (be => $this:ident, $typ:tt, $len_to_read:expr) => {{
+    (be => $this:ident, $typ:tt, $len_to_read:expr_2021) => {{
         const SIZE: usize = core::mem::size_of::<$typ>();
 
         let slice_at = match SIZE.checked_sub($len_to_read) {

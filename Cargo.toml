@@ -3,8 +3,8 @@ resolver = "2"
 members = [ "bytes" , "date" ]
 
 [workspace.package]
-rust-version = "1.84.0"
-edition = "2021"
+rust-version = "1.85.0"
+edition = "2024"
 authors = [ "Harsh Kumar Moroliya <hkmoroliya@gmail.com>" ]
 keywords = [ 
   "bytes",

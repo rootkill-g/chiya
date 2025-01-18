@@ -448,27 +448,29 @@ impl BytesMut {
     // SAFETY:
     // The caller must ensure that `count` <= `self.cap`
     pub(super) unsafe fn advance_unchecked(&mut self, count: usize) {
-        if count == 0 {
-            return;
-        }
-
-        debug_assert!(count <= self.cap, "internal: set_start out of bounds");
-
-        let kind = self.kind();
-
-        if kind == KIND_VEC {
-            let pos = self.get_vec_pos() + count;
-
-            if pos <= MAX_VEC_POS {
-                self.set_vec_pos(pos);
-            } else {
-                self.promote_to_shared(/* ref_count = */ 1);
+        unsafe {
+            if count == 0 {
+                return;
             }
-        }
 
-        self.ptr = vptr(self.ptr.as_ptr().add(count));
-        self.len = self.len.checked_sub(count).unwrap_or(0);
-        self.cap -= count;
+            debug_assert!(count <= self.cap, "internal: set_start out of bounds");
+
+            let kind = self.kind();
+
+            if kind == KIND_VEC {
+                let pos = self.get_vec_pos() + count;
+
+                if pos <= MAX_VEC_POS {
+                    self.set_vec_pos(pos);
+                } else {
+                    self.promote_to_shared(/* ref_count = */ 1);
+                }
+            }
+
+            self.ptr = vptr(self.ptr.as_ptr().add(count));
+            self.len = self.len.checked_sub(count).unwrap_or(0);
+            self.cap -= count;
+        }
     }
 
     fn try_unsplit(&mut self, other: BytesMut) -> Result<(), BytesMut> {
@@ -498,35 +500,39 @@ impl BytesMut {
     }
 
     unsafe fn promote_to_shared(&mut self, ref_cnt: usize) {
-        debug_assert_eq!(self.kind(), KIND_VEC);
-        debug_assert!(ref_cnt == 1 || ref_cnt == 2);
+        unsafe {
+            debug_assert_eq!(self.kind(), KIND_VEC);
+            debug_assert!(ref_cnt == 1 || ref_cnt == 2);
 
-        let original_capacity_repr =
-            (self.data as usize & ORIGINAL_CAPACITY_MASK) >> ORIGINAL_CAPACITY_OFFSET;
-        let offset = (self.data as usize) >> VEC_POS_OFFSET;
-        let shared = Box::new(Shared {
-            vec: rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, offset),
-            original_capacity_repr,
-            ref_count: AtomicUsize::new(ref_cnt),
-        });
+            let original_capacity_repr =
+                (self.data as usize & ORIGINAL_CAPACITY_MASK) >> ORIGINAL_CAPACITY_OFFSET;
+            let offset = (self.data as usize) >> VEC_POS_OFFSET;
+            let shared = Box::new(Shared {
+                vec: rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, offset),
+                original_capacity_repr,
+                ref_count: AtomicUsize::new(ref_cnt),
+            });
 
-        let shared = Box::into_raw(shared);
+            let shared = Box::into_raw(shared);
 
-        debug_assert_eq!(shared as usize & KIND_MASK, KIND_ARC);
+            debug_assert_eq!(shared as usize & KIND_MASK, KIND_ARC);
 
-        self.data = shared;
+            self.data = shared;
+        }
     }
 
     #[inline]
     unsafe fn shallow_clone(&mut self) -> BytesMut {
-        if self.kind() == KIND_ARC {
-            increment_shared(self.data);
+        unsafe {
+            if self.kind() == KIND_ARC {
+                increment_shared(self.data);
 
-            ptr::read(self)
-        } else {
-            self.promote_to_shared(/* ref_count = */ 2);
+                ptr::read(self)
+            } else {
+                self.promote_to_shared(/* ref_count = */ 2);
 
-            ptr::read(self)
+                ptr::read(self)
+            }
         }
     }
 
@@ -864,29 +870,33 @@ impl<'a> FromIterator<&'a u8> for BytesMut {
 
 // ---- Inner ----
 unsafe fn increment_shared(ptr: *mut Shared) {
-    let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);
+    unsafe {
+        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);
 
-    if old_size > isize::MAX as usize {
-        super::abort();
+        if old_size > isize::MAX as usize {
+            super::abort();
+        }
     }
 }
 
 unsafe fn release_shared(ptr: *mut Shared) {
-    // `Shared` storage... follow the drop steps from Arc.
-    if (*ptr).ref_count.fetch_sub(1, Ordering::Release) != 1 {
-        return;
+    unsafe {
+        // `Shared` storage... follow the drop steps from Arc.
+        if (*ptr).ref_count.fetch_sub(1, Ordering::Release) != 1 {
+            return;
+        }
+
+        // NOTE:
+        // This fence is needed to prevent reordering of use of the data and deletion of the data.
+        // Because it is marked `Released`, the decreasing of the reference count synchronizes with
+        // this `Acquire` fence. This means that use of data happens before decreasing the reference
+        // count, which happens before this fence, which happens before the deletion of the data.
+        // Thread sanitizer does not support atomic fences. Use an atomic load instead.
+        (*ptr).ref_count.load(Ordering::Acquire);
+
+        // Drop the data
+        drop(Box::from_raw(ptr));
     }
-
-    // NOTE:
-    // This fence is needed to prevent reordering of use of the data and deletion of the data.
-    // Because it is marked `Released`, the decreasing of the reference count synchronizes with
-    // this `Acquire` fence. This means that use of data happens before decreasing the reference
-    // count, which happens before this fence, which happens before the deletion of the data.
-    // Thread sanitizer does not support atomic fences. Use an atomic load instead.
-    (*ptr).ref_count.load(Ordering::Acquire);
-
-    // Drop the data
-    drop(Box::from_raw(ptr));
 }
 
 impl Shared {
@@ -1123,12 +1133,14 @@ fn invalid_ptr<T>(addr: usize) -> *mut T {
 }
 
 unsafe fn rebuild_vec(ptr: *mut u8, mut len: usize, mut cap: usize, offset: usize) -> Vec<u8> {
-    let ptr = ptr.sub(offset);
+    unsafe {
+        let ptr = ptr.sub(offset);
 
-    len += offset;
-    cap += offset;
+        len += offset;
+        cap += offset;
 
-    Vec::from_raw_parts(ptr, len, cap)
+        Vec::from_raw_parts(ptr, len, cap)
+    }
 }
 
 // ---- impl SharedVtable ----
@@ -1141,82 +1153,92 @@ static SHARED_VTABLE: Vtable = Vtable {
 };
 
 unsafe fn shared_v_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {
-    let shared = data.load(Ordering::Relaxed) as *mut Shared;
+    unsafe {
+        let shared = data.load(Ordering::Relaxed) as *mut Shared;
 
-    increment_shared(shared);
+        increment_shared(shared);
 
-    let data = AtomicPtr::new(shared as *mut ());
+        let data = AtomicPtr::new(shared as *mut ());
 
-    Bytes::with_vtable(ptr, len, data, &SHARED_VTABLE)
+        Bytes::with_vtable(ptr, len, data, &SHARED_VTABLE)
+    }
 }
 
 unsafe fn shared_v_to_vec(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Vec<u8> {
-    let shared: *mut Shared = data.load(Ordering::Relaxed).cast();
+    unsafe {
+        let shared: *mut Shared = data.load(Ordering::Relaxed).cast();
 
-    if (*shared).is_unique() {
-        let shared = &mut *shared;
+        if (*shared).is_unique() {
+            let shared = &mut *shared;
 
-        // Drop shared
-        let mut vec = mem::replace(&mut shared.vec, Vec::new());
+            // Drop shared
+            let mut vec = mem::replace(&mut shared.vec, Vec::new());
 
-        release_shared(shared);
+            release_shared(shared);
 
-        // Copy back buffer
-        ptr::copy(ptr, vec.as_mut_ptr(), len);
+            // Copy back buffer
+            ptr::copy(ptr, vec.as_mut_ptr(), len);
 
-        vec.set_len(len);
+            vec.set_len(len);
 
-        vec
-    } else {
-        let v = slice::from_raw_parts(ptr, len).to_vec();
+            vec
+        } else {
+            let v = slice::from_raw_parts(ptr, len).to_vec();
 
-        release_shared(shared);
+            release_shared(shared);
 
-        v
+            v
+        }
     }
 }
 
 unsafe fn shared_v_to_mut(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> BytesMut {
-    let shared: *mut Shared = data.load(Ordering::Relaxed).cast();
+    unsafe {
+        let shared: *mut Shared = data.load(Ordering::Relaxed).cast();
 
-    if (*shared).is_unique() {
-        let shared = &mut *shared;
+        if (*shared).is_unique() {
+            let shared = &mut *shared;
 
-        // NOTE:
-        // The capacity is always the original capacity of the buffer minus the offset from the
-        // start of the buffer
-        let v = &mut shared.vec;
-        let v_capacity = v.capacity();
-        let v_ptr = v.as_mut_ptr();
-        let offset = offset_from(ptr as *mut u8, v_ptr);
-        let cap = v_capacity - offset;
-        let ptr = vptr(ptr as *mut u8);
+            // NOTE:
+            // The capacity is always the original capacity of the buffer minus the offset from the
+            // start of the buffer
+            let v = &mut shared.vec;
+            let v_capacity = v.capacity();
+            let v_ptr = v.as_mut_ptr();
+            let offset = offset_from(ptr as *mut u8, v_ptr);
+            let cap = v_capacity - offset;
+            let ptr = vptr(ptr as *mut u8);
 
-        BytesMut {
-            ptr,
-            len,
-            cap,
-            data: shared,
+            BytesMut {
+                ptr,
+                len,
+                cap,
+                data: shared,
+            }
+        } else {
+            let v = slice::from_raw_parts(ptr, len).to_vec();
+
+            release_shared(shared);
+
+            BytesMut::from_vec(v)
         }
-    } else {
-        let v = slice::from_raw_parts(ptr, len).to_vec();
-
-        release_shared(shared);
-
-        BytesMut::from_vec(v)
     }
 }
 
 unsafe fn shared_v_is_unique(data: &AtomicPtr<()>) -> bool {
-    let shared = data.load(Ordering::Acquire);
-    let ref_count = (*shared.cast::<Shared>()).ref_count.load(Ordering::Relaxed);
-    ref_count == 1
+    unsafe {
+        let shared = data.load(Ordering::Acquire);
+        let ref_count = (*shared.cast::<Shared>()).ref_count.load(Ordering::Relaxed);
+        ref_count == 1
+    }
 }
 
 unsafe fn shared_v_drop(data: &mut AtomicPtr<()>, _ptr: *const u8, _len: usize) {
-    data.with_mut(|shared| {
-        release_shared(*shared as *mut Shared);
-    });
+    unsafe {
+        data.with_mut(|shared| {
+            release_shared(*shared as *mut Shared);
+        });
+    }
 }
 
 fn _split_to_must_use() {}

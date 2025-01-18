@@ -405,7 +405,7 @@ macro_rules! deref_forward_bufmut {
 
         #[inline]
         unsafe fn advance_mut(&mut self, cnt: usize) {
-            (**self).advance_mut(cnt)
+            unsafe { (**self).advance_mut(cnt) }
         }
 
         #[inline]
@@ -656,15 +656,17 @@ unsafe impl BufMut for Vec<u8> {
 
     #[inline]
     unsafe fn advance_mut(&mut self, cnt: usize) {
-        let len = self.len();
-        let remaining = self.capacity() - len;
+        unsafe {
+            let len = self.len();
+            let remaining = self.capacity() - len;
 
-        if remaining < cnt {
-            panic_advance(cnt, remaining);
+            if remaining < cnt {
+                panic_advance(cnt, remaining);
+            }
+
+            // Addition will not overflow since the sum is at most the capacity
+            self.set_len(len + cnt);
         }
-
-        // Addition will not overflow since the sum is at most the capacity
-        self.set_len(len + cnt);
     }
 
     #[inline]
