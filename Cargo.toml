@@ -26,3 +26,6 @@ keywords = [
 lto = true
 opt-level = 3
 codegen-units = 1
+
+[workspace.dependencies]
+bytes = { version = "1.0.0", path = "./bytes" }
