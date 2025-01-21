@@ -1,6 +1,6 @@
 [package]
-name = "thread"
-version = "0.1.0"
+name = "stack"
+version = "1.0.0"
 rust-version.workspace = true
 edition.workspace = true
 authors.workspace = true

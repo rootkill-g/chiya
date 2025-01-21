@@ -1,0 +1,10 @@
+[package]
+name = "coroutine"
+version = "0.1.0"
+rust-version.workspace = true
+edition.workspace = true
+authors.workspace = true
+keywords.workspace = true
+
+[dependencies]
+log = { workspace = true }

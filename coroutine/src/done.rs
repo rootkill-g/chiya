@@ -3,7 +3,7 @@ use log::{debug, error};
 pub struct Done;
 
 impl Done {
-    fn drop_coroutine(coroutine: CoroutineImpl) {
+    pub(crate) fn drop_coroutine(coroutine: CoroutineImpl) {
         let local = unsafe { Box::from_raw(get_local_coroutine(&coroutine)) };
         let name = local.get_coroutine().name();
 
