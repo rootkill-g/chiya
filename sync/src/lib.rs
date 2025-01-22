@@ -1,5 +1,6 @@
 mod atomic_cell;
 mod atomic_option;
+mod atomic_unit;
 mod backoff;
 mod seq_lock;
 
