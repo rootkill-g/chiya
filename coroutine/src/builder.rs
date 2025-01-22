@@ -1,6 +1,7 @@
 use std::{borrow::Cow, io, sync::Arc, thread::JoinHandle};
 
 use crate::{
+    Coroutine,
     done::Done,
     event::{EventSource, EventSubscriber},
 };
@@ -90,7 +91,7 @@ impl CoroutineBuilder {
                 coroutine
             };
 
-            let handle = Coroutine::new(name, stack_size);
+            let handle = Coroutine::new(name.into(), stack_size);
 
             // Create the local storage
             let local = CoroutineLocal::new(handle.clone(), join.clone());
@@ -100,7 +101,7 @@ impl CoroutineBuilder {
 
             scheduler.schedule(coroutine, id);
 
-            Ok(handle)
+            Ok((coroutine, make_join_handle(handle, join, packet, panic)))
         }
     }
 }

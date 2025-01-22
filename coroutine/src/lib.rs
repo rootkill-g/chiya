@@ -9,6 +9,8 @@ mod cancel;
 mod done;
 mod event;
 mod guard;
+mod join;
+mod join_handler;
 mod park;
 mod register_context;
 mod runtime;

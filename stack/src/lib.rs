@@ -4,6 +4,7 @@ pub use sys_stack::SysStack;
 
 mod stack_error;
 mod sys_stack;
+mod unix;
 
 /// Generator stack
 /// This struct will not deallocate the memory

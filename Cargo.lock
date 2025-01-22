@@ -8,7 +8,7 @@ version = "1.0.0"
 
 [[package]]
 name = "coroutine"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "log",
 ]
@@ -31,8 +31,5 @@ name = "stack"
 version = "1.0.0"
 
 [[package]]
-name = "unix"
+name = "sync"
 version = "0.1.0"
-dependencies = [
- "stack",
-]
