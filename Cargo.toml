@@ -31,4 +31,5 @@ codegen-units = 1
 bytes = { version = "1.0.0", path = "./bytes" }
 stack = { version = "1.0.0", path = "./stack/" }
 coroutine = { version = "1.0.0", path = "./coroutine/" }
+sync = { version = "1.0.0", path = "./sync/" }
 log = { version = "0.4.25" }

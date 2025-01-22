@@ -8,3 +8,4 @@ keywords.workspace = true
 
 [dependencies]
 log = { workspace = true }
+sync = { workspace = true }
