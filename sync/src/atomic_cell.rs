@@ -1,9 +1,11 @@
 use core::{
     cell::UnsafeCell,
-    cmp,
+    cmp, fmt,
     mem::{ManuallyDrop, MaybeUninit},
 };
 use std::sync::atomic::{self, Ordering};
+
+use crate::seq_lock::SeqLock;
 
 #[repr(transparent)]
 pub struct AtomicCell<T> {
@@ -637,7 +639,7 @@ impl AtomicCell<bool> {
             {
                 let _guard = lock(self.as_ptr() as usize).write();
                 let val = unsafe { &mut *(self.as_ptr()) };
-                let old = &val;
+                let old = *val;
 
                 *val = !(old & value);
 
@@ -645,4 +647,92 @@ impl AtomicCell<bool> {
             }
         }
     }
+
+    /// Applies logical `or` to the current value and returns the previous value
+    #[inline]
+    pub fn fetch_or(&self, value: bool) -> bool {
+        atomic! {
+            bool, _a,
+            {
+                let a = unsafe { &*(self.as_ptr() as *const atomic::AtomicBool) };
+
+                a.fetch_or(value, Ordering::AcqRel)
+            },
+            {
+                let _guard = lock(self.as_ptr() as usize).write();
+                let val = unsafe { &mut *(self.as_ptr()) };
+                let old = *val;
+
+                *val |= value;
+
+                old
+            }
+        }
+    }
+
+    /// Applies logical `xor` to the current value and returns the previous value
+    #[inline]
+    pub fn fetch_xor(&self, value: bool) -> bool {
+        atomic! {
+            bool, _a,
+            {
+                let a = unsafe { &*(self.as_ptr() as *const atomic::AtomicBool) };
+
+                a.fetch_xor(value, Ordering::AcqRel)
+            },
+            {
+                let _guard = lock(self.as_ptr() as usize).write();
+                let val = unsafe { &mut *(self.as_ptr()) };
+                let old = *val;
+
+                *val ^= value;
+
+                old
+            }
+        }
+    }
+}
+
+impl<T: Default> Default for AtomicCell<T> {
+    fn default() -> AtomicCell<T> {
+        AtomicCell::new(T::default())
+    }
+}
+
+impl<T> From<T> for AtomicCell<T> {
+    #[inline]
+    fn from(value: T) -> AtomicCell<T> {
+        AtomicCell::new(value)
+    }
+}
+
+impl<T: Copy + fmt::Debug> fmt::Debug for AtomicCell<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AtomicCell")
+            .field("value", &self.load())
+            .finish()
+    }
+}
+
+/// Returns `true` if values of type `A` can be transmuted into values of type `B`
+const fn can_transmute<A, B>() -> bool {
+    // Sizes must be equal, but alignment of `A` must be greater than or equal to that of `B`
+    (core::mem::size_of::<A>() == core::mem::size_of::<B>())
+        & (core::mem::size_of::<A>() >= core::mem::size_of::<B>())
+}
+
+/// Returns a reference to the global lock associated with the `AtomicCell` at address `addr`
+#[inline]
+#[must_use]
+fn lock(addr: usize) -> &'static SeqLock {
+    // The number of locks is a prime number because we want to make sure `addr % LEN` gets
+    // dispersed across all locks
+    const LEN: usize = 67;
+    const L: CachePadded<SeqLock> = CachePadded::new(SeqLock::new());
+
+    static LOCKS: [CachePadded<SeqLock>; LEN] = [L; LEN];
+
+    // If the modulus is a constant number, the compiler will use crazy math to transform this into
+    // a sequence of cheap atithmetic operations rather than using the slow modulo instruction
+    &LOCKS[addr % LEN]
 }
