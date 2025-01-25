@@ -11,6 +11,7 @@ name = "coroutine"
 version = "1.0.0"
 dependencies = [
  "log",
+ "stack",
  "sync",
 ]
 
@@ -20,10 +21,6 @@ version = "1.0.0"
 dependencies = [
  "bytes",
 ]
-
-[[package]]
-name = "generator"
-version = "1.0.0"
 
 [[package]]
 name = "log"
