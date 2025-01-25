@@ -1,15 +1,17 @@
-use core::ffi::{c_int, c_size_t, c_uint, c_ulong, c_void};
+use core::ffi::{c_int, c_uint, c_ulong, c_void};
 
-use stack::Stack;
+use crate::Stack;
 
+#[allow(non_camel_case_types)]
+pub type off_t = i64;
 #[allow(non_camel_case_types)]
 pub type rlim_t = u64;
 #[allow(non_camel_case_types)]
 pub type __rlimit_resource_t = c_uint;
 #[allow(non_camel_case_types)]
-pub type rlim_t = u64;
+pub type sighandler_t = size_t;
 #[allow(non_camel_case_types)]
-pub type sighandler_t = c_size_t;
+pub type size_t = usize;
 #[allow(non_camel_case_types)]
 pub type greg_t = i64;
 
@@ -29,6 +31,10 @@ pub const PROT_NONE: c_int = 0;
 pub const RLIMIT_STACK: __rlimit_resource_t = 3;
 pub const RLIM_INFINITY: rlim_t = 18_446_744_073_709_551_615u64; // u64::MAX
 
+pub const SA_SIGINFO: c_int = 0x00000004;
+pub const SA_ONSTACK: c_int = 0x08000000;
+pub const SIGBUS: c_int = 7;
+pub const SIGSEGV: c_int = 11;
 pub const SIG_UNBLOCK: c_int = 0x01;
 
 unsafe extern "sysv64" {
@@ -87,7 +93,7 @@ pub struct ucontext_t {
 pub struct stack_t {
     pub ss_sp: *mut c_void,
     pub ss_flags: c_int,
-    pub ss_size: c_size_t,
+    pub ss_size: size_t,
 }
 
 #[repr(C)]

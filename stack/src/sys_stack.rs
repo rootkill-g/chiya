@@ -1,6 +1,6 @@
 use std::os::raw::c_void;
 
-use crate::stack_error::StackError;
+use crate::{stack_error::StackError, unix};
 
 /// Represents any kind of stack memory
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl SysStack {
     }
 
     /// Allocates a new stack of size: `size`
-    pub(crate) fn allocate(size: usize, protected: bool) -> Result<SysStack, StackError> {
+    pub(crate) fn allocate(mut size: usize, protected: bool) -> Result<SysStack, StackError> {
         let page_size = unix::page_size();
         let min_stack_size = unix::min_stack_size();
         let max_stack_size = unix::max_stack_size();

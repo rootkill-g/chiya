@@ -8,10 +8,12 @@ use std::{
     thread::{self, yield_now},
 };
 
-use crate::{
-    sigaddset, sigemptyset, sigprocmask,
-    x86_64::{SIG_UNBLOCK, sigaction, sighandler_t, siginfo_t, sigset_t, ucontext_t},
+use crate::unix::{
+    sigaction, sigaddset, sigemptyset, sigprocmask,
+    x86_64::{SIG_UNBLOCK, sighandler_t, siginfo_t, sigset_t, ucontext_t},
 };
+
+use super::x86_64::{SA_ONSTACK, SA_SIGINFO, SIGBUS, SIGSEGV};
 
 static SIG_ACTION: Mutex<MaybeUninit<sigaction>> = Mutex::new(MaybeUninit::uninit());
 
@@ -38,7 +40,7 @@ unsafe extern "C" fn signal_handler(signum: c_int, info: *mut siginfo_t, ctx: *m
             thread::current().name().unwrap_or("<unknown>")
         );
 
-        ContextStack::current().top().err = Some(Box::new(crate::Error::StackErr));
+        ContextStack::current().top().err = Some(Box::new(rt::Error::StackErr));
 
         let mut sigset: sigset_t = mem::zeroed();
 
