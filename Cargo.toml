@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "bytes" , "date" , "coroutine" , "stack" , "sync"]
+members = [ "bytes" , "date" , "coroutine" , "stack" , "sync", "generator" ]
 
 [workspace.package]
 rust-version = "1.85.0"
@@ -29,7 +29,8 @@ codegen-units = 1
 
 [workspace.dependencies]
 bytes = { version = "1.0.0", path = "./bytes" }
-stack = { version = "1.0.0", path = "./stack/" }
 coroutine = { version = "1.0.0", path = "./coroutine/" }
+generator = { version = "1.0.0", path = "./generator/" }
+stack = { version = "1.0.0", path = "./stack/" }
 sync = { version = "1.0.0", path = "./sync/" }
 log = { version = "0.4.25" }
