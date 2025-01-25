@@ -9,3 +9,4 @@ keywords.workspace = true
 [dependencies]
 log = { workspace = true }
 sync = { workspace = true }
+stack = { workspace = true }
