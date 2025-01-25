@@ -1,6 +1,7 @@
 use std::{os::raw::c_void, ptr};
 
 pub use sys_stack::SysStack;
+pub use unix::page_size;
 
 mod stack_error;
 mod sys_stack;
