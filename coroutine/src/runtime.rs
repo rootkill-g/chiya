@@ -10,20 +10,6 @@ thread_local! {
     static ROOT_CONTEXT_P: Cell<*mut Context> = const { Cell::new(ptr::null_mut()) };
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum Error {
-    /// Done panic
-    Done,
-    /// Cancel panic
-    Cancel,
-    /// Type mismatch panic
-    TypeErr,
-    /// Stack overflow panic
-    StackErr,
-    /// Wrong context panic
-    ContextErr,
-}
-
 /// Generator Context
 #[repr(C)]
 #[repr(align(128))]
@@ -32,7 +18,7 @@ pub struct Context {
     pub regs: RegContext,
 
     /// Child context
-    child: *mut Context,
+    pub(crate) child: *mut Context,
 
     /// Parent context
     pub parent: *mut Context,
@@ -191,6 +177,14 @@ impl ContextStack {
 
         ContextStack { root }
     }
+
+    /// Get the top context
+    #[inline]
+    pub fn top(&self) -> &'static mut Context {
+        let root = unsafe { &mut *self.root };
+
+        unsafe { &mut *root.parent }
+    }
 }
 
 /// Check the current context if it's generator
@@ -207,5 +201,5 @@ pub fn is_generator() -> bool {
 fn type_error<A>(msg: &str) -> ! {
     log::error!("{}, expected type: {}", msg, any::type_name::<A>());
 
-    std::panic::panic_any(Error::TypeErr);
+    std::panic::panic_any(crate::error::Error::TypeErr);
 }
