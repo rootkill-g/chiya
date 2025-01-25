@@ -7,6 +7,7 @@ use park::Park;
 mod builder;
 mod cancel;
 mod done;
+mod error;
 mod event;
 mod guard;
 mod join;
@@ -15,6 +16,7 @@ mod park;
 mod register_context;
 mod runtime;
 mod spawn;
+mod yield_;
 
 pub(crate) struct Inner {
     name: Option<Cow<'static, str>>,
