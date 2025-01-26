@@ -185,6 +185,26 @@ impl ContextStack {
 
         unsafe { &mut *root.parent }
     }
+
+    /// Get the coroutine context
+    #[inline]
+    pub fn coroutine_ctx(&self) -> Option<&'static mut Context> {
+        let root = unsafe { &mut *self.root };
+
+        // Search from top
+        let mut ctx = unsafe { &mut *root.parent };
+
+        while ctx as *const _ != root as *const _ {
+            if !ctx.local_data.is_null() {
+                return Some(ctx);
+            }
+
+            ctx = unsafe { &mut *ctx.parent };
+        }
+
+        // Not find any coroutine
+        None
+    }
 }
 
 /// Check the current context if it's generator
