@@ -6,6 +6,8 @@ use std::{
     },
 };
 
+use crate::sync::AtomicOption;
+
 pub struct Join {
     /// The coroutine thats waiting for this join handler
     pub(crate) to_wake: AtomicOption<Arc<Blocker>>,
