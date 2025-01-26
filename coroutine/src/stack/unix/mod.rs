@@ -11,7 +11,7 @@ use x86_64::{
 };
 
 pub mod overflow;
-mod x86_64;
+pub mod x86_64;
 
 unsafe extern "C" {
     #[cfg_attr(
