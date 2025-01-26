@@ -1,6 +1,9 @@
 use core::ffi::{c_int, c_uint, c_ulong, c_void};
 
-use crate::{InitFn, Stack, align_down, mut_offset};
+use crate::stack::{
+    Stack,
+    asm::{InitFn, align_down, mut_offset},
+};
 
 #[allow(non_camel_case_types)]
 pub type off_t = i64;
