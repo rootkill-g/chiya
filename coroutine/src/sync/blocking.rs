@@ -23,18 +23,21 @@ impl ThreadPark {
         let mut result = Ok(());
         let mut guard = self.lock.lock().unwrap();
 
-        while *guard == 0 && result.is_ok() {
+        while *guard.clone() == 0 && result.is_ok() {
             match dur {
-                None => self.cvar.wait(&mut guard),
+                None => {
+                    self.cvar.wait(guard);
+                }
                 Some(d) => {
-                    let t = self.cvar.wait_timeout(&mut guard, d).unwrap().1;
+                    let t = self.cvar.wait_timeout(guard, d).unwrap().1;
 
                     if t.timed_out() {
-                        result = Err(ParkError::Timeout)
+                        result = Err(ParkError::Timeout);
                     }
                 }
             }
         }
+
         // Must clear the status
         *guard = 0;
 
