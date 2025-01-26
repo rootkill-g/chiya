@@ -1,8 +1,9 @@
 use std::ops::Range;
 
-use stack::page_size;
-
-use crate::runtime::{ContextStack, is_generator};
+use crate::{
+    runtime::{ContextStack, is_generator},
+    stack::page_size,
+};
 
 pub type Guard = Range<usize>;
 
