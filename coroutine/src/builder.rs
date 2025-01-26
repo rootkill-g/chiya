@@ -4,6 +4,8 @@ use crate::{
     Coroutine,
     done::Done,
     event::{EventSource, EventSubscriber},
+    join::Join,
+    sync::AtomicOption,
 };
 
 /// Coroutine Builder, used to configure the coroutine
@@ -57,51 +59,63 @@ impl CoroutineBuilder {
         F: FnOnce() -> T + Send + 'static,
     {
         unsafe {
-            static DONE: Done = Done;
-
             let name = self.name;
             let id = self.id;
             let (coroutine, handle) = self.spawn_impl(f)?;
             let scheduler = get_scheduler();
-            let stack_size = self.stack_size.unwrap_or_else(|| config().get_stack_size());
 
-            // Create a join resource, shared by waited coroutine and *this* coroutine
-            let panic = Arc::new(AtomicOption::none());
-            let join = Arc::new(Join::new(panic.clone()));
-            let packet = Arc::new(AtomicOption::none());
-            let their_join = join.clone();
-            let their_packet = packet.clone();
+            match id {
+                None => scheduler.schedule_global(coroutine),
+                Some(id) => scheduler.schedule_global_with_id(coroutine, id),
+            }
 
-            let subscriber = EventSubscriber {
-                resource: &DONE as &dyn EventSource as *const _ as *mut dyn EventSource,
-            };
-
-            let closure = move || {
-                their_packet.store(f());
-                their_join.trigger();
-
-                subscriber
-            };
-
-            let mut coroutine = if stack_size == config().get_stack_size() {
-                let mut coroutine = scheduler.pool.get();
-
-                coroutine.init_code(closure);
-
-                coroutine
-            };
-
-            let handle = Coroutine::new(name.into(), stack_size);
-
-            // Create the local storage
-            let local = CoroutineLocal::new(handle.clone(), join.clone());
-
-            // Attach the local storage to the coroutine
-            coroutine.set_local_data(Box::into_raw(local) as *mut u8);
-
-            scheduler.schedule(coroutine, id);
-
-            Ok((coroutine, make_join_handle(handle, join, packet, panic)))
+            Ok(handle)
         }
+    }
+
+    fn spawn_impl<F, T>(self, f: F) -> io::Result<(CoroutineImpl, JoinHandle<T>)> {
+        static DONE: Done = Done {};
+
+        let scheduler = get_scheduler();
+        let name = self.name;
+        let stack_size = self.stack_size.unwrap_or_else(|| config().get_stack_size());
+
+        // Create a join resource, shared by waited coroutine and *this* coroutine
+        let panic = Arc::new(AtomicOption::none());
+        let join = Arc::new(Join::new(panic.clone()));
+        let packet = Arc::new(AtomicOption::none());
+        let their_join = join.clone();
+        let their_packet = packet.clone();
+
+        let subscriber = EventSubscriber {
+            resource: &DONE as &dyn EventSource as *const _ as *mut dyn EventSource,
+        };
+
+        let closure = move || {
+            their_packet.store(f());
+            their_join.trigger();
+
+            subscriber
+        };
+
+        let mut coroutine = if stack_size == config().get_stack_size() {
+            let mut coroutine = scheduler.pool.get();
+
+            coroutine.init_code(closure);
+
+            coroutine
+        };
+
+        let handle = Coroutine::new(name.into(), stack_size);
+
+        // Create the local storage
+        let local = CoroutineLocal::new(handle.clone(), join.clone());
+
+        // Attach the local storage to the coroutine
+        coroutine.set_local_data(Box::into_raw(local) as *mut u8);
+
+        scheduler.schedule(coroutine, id);
+
+        Ok((coroutine, make_join_handle(handle, join, packet, panic)))
     }
 }
