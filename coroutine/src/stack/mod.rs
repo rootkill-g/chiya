@@ -2,7 +2,7 @@ use std::{os::raw::c_void, ptr};
 
 //pub(crate) use asm::{InitFn, align_down, mut_offset};
 pub use sys_stack::SysStack;
-pub use unix::{page_size, x86_64::Registers};
+pub use unix::{page_size, x86_64::Register};
 
 mod asm;
 mod stack_error;
