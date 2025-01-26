@@ -43,7 +43,7 @@ pub const SIG_UNBLOCK: c_int = 0x01;
 unsafe extern "sysv64" {
     pub fn bootstrap_green_task();
     pub fn prefetch(data: *const usize);
-    pub fn swap_registers(out_regs: *mut Registers, in_regs: *const Registers);
+    pub fn swap_registers(out_regs: *mut Register, in_regs: *const Register);
 }
 
 #[repr(C)]
@@ -156,13 +156,13 @@ impl siginfo_t {
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct Registers {
+pub struct Register {
     gpr: [usize; 8],
 }
 
-impl Registers {
-    pub fn new() -> Registers {
-        Registers { gpr: [0; 8] }
+impl Register {
+    pub fn new() -> Register {
+        Register { gpr: [0; 8] }
     }
 
     #[inline]
@@ -177,7 +177,7 @@ impl Registers {
 }
 
 pub fn initialize_call_frame(
-    regs: &mut Registers,
+    regs: &mut Register,
     fptr: InitFn,
     arg: usize,
     arg2: *mut usize,

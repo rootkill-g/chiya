@@ -1,3 +1,5 @@
+use crate::stack::Registers;
+
 #[derive(Debug)]
 pub struct RegisterContext {
     /// Hold the registeres while the task or scheduler is suspended
