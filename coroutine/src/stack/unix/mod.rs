@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::sys_stack::SysStack;
+use crate::stack::sys_stack::SysStack;
 use x86_64::{
     __rlimit_resource_t, _SC_PAGESIZE, MAP_ANON, MAP_FAILED, MAP_PRIVATE, MAP_STACK, NULL,
     PROT_NONE, PROT_READ, PROT_WRITE, off_t, rlimit, sigaction, sigset_t, size_t,
