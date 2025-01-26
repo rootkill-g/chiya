@@ -8,7 +8,7 @@ use std::{
     thread::{self, yield_now},
 };
 
-use self::{
+use crate::stack::unix::{
     sigaction, sigaddset, sigemptyset, sigprocmask,
     x86_64::{SIG_UNBLOCK, sighandler_t, siginfo_t, sigset_t, ucontext_t},
 };
@@ -21,7 +21,7 @@ unsafe extern "C" fn signal_handler(signum: c_int, info: *mut siginfo_t, ctx: *m
     unsafe {
         let _ctx = &mut *ctx;
         let addr = (*info).si_addr() as usize;
-        let stack_guard = supe::guard::current();
+        let stack_guard = crate::guard::current();
 
         if !stack_guard.contains(&addr) {
             println!("{}", Backtrace::force_capture());
@@ -40,7 +40,7 @@ unsafe extern "C" fn signal_handler(signum: c_int, info: *mut siginfo_t, ctx: *m
             thread::current().name().unwrap_or("<unknown>")
         );
 
-        ContextStack::current().top().err = Some(Box::new(rt::Error::StackErr));
+        crate::runtime::ContextStack::current().top().err = Some(Box::new(rt::Error::StackErr));
 
         let mut sigset: sigset_t = mem::zeroed();
 
