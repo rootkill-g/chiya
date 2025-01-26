@@ -6,12 +6,15 @@ use std::{
     },
 };
 
+use crate::{run_coroutine, sync::AtomicOption};
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ParkError {
     Cancelled,
     Timeout,
 }
 
+#[derive(Debug)]
 pub struct Park {
     // The coroutine which is waiting for this park instance
     wait_coroutine: Arc<AtomicOption<CoroutineImpl>>,
