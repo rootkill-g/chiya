@@ -1,6 +1,6 @@
 use std::os::raw::c_void;
 
-use crate::{stack_error::StackError, unix};
+use crate::stack::{stack_error::StackError, unix};
 
 /// Represents any kind of stack memory
 #[derive(Debug)]
