@@ -5,8 +5,10 @@ mod atomic_macro;
 mod atomic_option;
 mod atomic_unit;
 mod backoff;
-mod blocking;
+pub mod blocker;
+mod parker;
 mod seq_lock;
+mod thread_park;
 
 pub(crate) use self::atomic_macro::atomic;
 pub use atomic_cell::AtomicCell;
