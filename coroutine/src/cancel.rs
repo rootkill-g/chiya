@@ -6,6 +6,8 @@ use std::{
     },
 };
 
+use crate::{sync::AtomicOption, unlikely::unlikely, yield_now::get_coroutine_para};
+
 pub trait CancelIo {
     type Data;
 
@@ -85,6 +87,15 @@ impl<T: CancelIo> CancelImpl<T> {
     // Enable the cancel bit
     pub fn enable_cancel(&self) {
         self.state.fetch_sub(2, Ordering::Release);
+    }
+
+    // Panic if cancel bit again
+    pub fn check_cancel(&self) {
+        if unlikely(self.state.load(Ordering::Acquire) == 1) {
+            // Before panic clear the last coroutine error
+            // This would affect future new coroutine that reuse the instance
+            get_coroutine_para();
+        }
     }
 
     // Cancel for coroutine
