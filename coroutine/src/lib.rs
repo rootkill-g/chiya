@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt, sync::Arc};
+use std::{borrow::Cow, fmt, ptr, sync::Arc};
 
 use cancel::Cancel;
 use done::Done;
@@ -7,10 +7,12 @@ use park::Park;
 mod builder;
 mod cancel;
 mod cold;
+mod coroutine_local;
 mod done;
 mod error;
 mod event;
 mod guard;
+mod id_hasher;
 mod join;
 mod join_handle;
 mod likely;
@@ -102,4 +104,10 @@ pub(crate) fn run_coroutine(mut coroutine: CoroutineImpl) {
             Done::drop_coroutine(coroutine);
         }
     }
+}
+
+/// Returns true if current context is coroutine
+pub(crate) fn is_coroutine() -> bool {
+    // We will never call this function in a pure generator context
+    get_coroutine_local_data().is_some()
 }
