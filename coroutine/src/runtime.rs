@@ -5,6 +5,8 @@ use std::{
     ptr::{self, null_mut},
 };
 
+use crate::register_context::RegisterContext;
+
 thread_local! {
     /// Each thread has it's own generator context stack
     static ROOT_CONTEXT_P: Cell<*mut Context> = const { Cell::new(ptr::null_mut()) };
@@ -15,7 +17,7 @@ thread_local! {
 #[repr(align(128))]
 pub struct Context {
     /// Generator regs context
-    pub regs: RegContext,
+    pub regs: RegisterContext,
 
     /// Child context
     pub(crate) child: *mut Context,
@@ -46,7 +48,7 @@ impl Context {
     /// New instance of Generator Context
     pub fn new() -> Context {
         Context {
-            regs: RegContext::empty(),
+            regs: RegisterContext::empty(),
             para: MaybeUninit::zeroed(),
             ret: MaybeUninit::zeroed(),
             _ref: 1, // Non-zero means Not running
@@ -222,4 +224,24 @@ fn type_error<A>(msg: &str) -> ! {
     log::error!("{}, expected type: {}", msg, any::type_name::<A>());
 
     std::panic::panic_any(crate::error::Error::TypeErr);
+}
+
+/// Get the current context local data
+/// Only coroutine support local data
+pub(crate) fn get_local_data() -> *mut u8 {
+    let env = ContextStack::current();
+    let root = unsafe { &mut *env.root };
+
+    // Search from top
+    let mut ctx = unsafe { &mut *root.parent };
+
+    while ctx as *const _ != root as *const _ {
+        if !ctx.local_data.is_null() {
+            return ctx.local_data;
+        }
+
+        ctx = unsafe { &mut *ctx.parent };
+    }
+
+    ptr::null_mut()
 }
