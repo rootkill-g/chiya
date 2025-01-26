@@ -40,7 +40,8 @@ unsafe extern "C" fn signal_handler(signum: c_int, info: *mut siginfo_t, ctx: *m
             thread::current().name().unwrap_or("<unknown>")
         );
 
-        crate::runtime::ContextStack::current().top().err = Some(Box::new(rt::Error::StackErr));
+        crate::runtime::ContextStack::current().top().err =
+            Some(Box::new(crate::error::Error::StackErr));
 
         let mut sigset: sigset_t = mem::zeroed();
 
