@@ -1,5 +1,7 @@
 use log::{debug, error};
 
+use crate::event::EventSource;
+
 pub struct Done;
 
 impl Done {
@@ -26,5 +28,11 @@ impl Done {
         if size == config().get_stack_size() {
             get_scheduler().pool.put(coroutine);
         }
+    }
+}
+
+impl EventSource for Done {
+    fn subscribe(&mut self, coroutine_impl: CoroutineImpl) {
+        Done::drop_coroutine(coroutine_impl);
     }
 }
