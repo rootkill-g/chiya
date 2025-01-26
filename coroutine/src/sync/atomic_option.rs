@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::AtomicCell;
+use super::{AtomicCell, blocker::Blocker};
 
 pub struct AtomicOption<T> {
     inner: AtomicCell<Option<T>>,
