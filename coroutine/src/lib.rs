@@ -11,11 +11,13 @@ mod error;
 mod event;
 mod guard;
 mod join;
-mod join_handler;
+mod join_handle;
 mod park;
 mod register_context;
 mod runtime;
 mod spawn;
+mod stack;
+mod sync;
 mod yield_;
 
 pub(crate) struct Inner {
