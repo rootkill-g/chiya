@@ -1,3 +1,5 @@
+use std::{mem::MaybeUninit, ptr, sync::atomic::Ordering};
+
 mod atomic_cell;
 mod atomic_macro;
 mod atomic_option;
@@ -5,8 +7,6 @@ mod atomic_unit;
 mod backoff;
 mod blocking;
 mod seq_lock;
-
-use std::{mem::MaybeUninit, ptr, sync::atomic::Ordering};
 
 pub(crate) use self::atomic_macro::atomic;
 pub use atomic_cell::AtomicCell;
