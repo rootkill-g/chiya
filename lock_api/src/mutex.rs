@@ -19,8 +19,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use crate::{raw_mutex::RawMutex, raw_mutex_fair::RawMutexFair, raw_mutex_timed::RawMutexTimed};
 
 pub struct Mutex<R, T: ?Sized> {
-    raw: R,
-    data: UnsafeCell<T>,
+    pub(crate) raw: R,
+    pub(crate) data: UnsafeCell<T>,
 }
 
 unsafe impl<R: RawMutex + Send, T: ?Sized + Send> Send for Mutex<R, T> {}
@@ -144,6 +144,26 @@ impl<R: RawMutex, T: ?Sized> Mutex<R, T> {
     pub fn data_ptr(&self) -> *mut T {
         self.data.get()
     }
+
+    /// Creates a new `ArcMutexGuard` without checking if the mutex is locked
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    unsafe fn make_arc_guard_unchecked(self: &Arc<Self>) -> ArcMutexGuard<R, T> {
+        ArcMutexGuard {
+            mutex: self.clone(),
+            marker: PhantomData,
+        }
+    }
+
+    /// Acquires a lock through an `Arc`
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn lock_arc(self: &Arc<Self>) -> ArcMutexGuard<R, T> {
+        self.raw.lock();
+
+        // SAFETY: the locking guarantee is upheld
+        unsafe { self.make_arc_guard_unchecked() }
+    }
 }
 
 impl<R: RawMutexFair, T: ?Sized> Mutex<R, T> {
@@ -176,6 +196,36 @@ impl<R: RawMutexTimed, T: ?Sized> Mutex<R, T> {
         if self.raw.try_lock_until(timeout) {
             // SAFETY: The lock is held, as required
             Some(unsafe { self.make_guard_unchecked() })
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this lock through an `Arc` until a timeout is reached
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc_for(
+        self: &Arc<Self>,
+        timeout: R::Duration,
+    ) -> Option<ArcMutexGuard<'_, R, T>> {
+        if self.raw.try_lock_for(timeout) {
+            // SAFETY: Locking guarantee is upheld
+            Some(unsafe { self.make_arc_guard_unchecked() })
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this lock through an `Arc` until a timeout is reached
+    #[cfg(feature = "arc_lock")]
+    #[inline]
+    pub fn try_lock_arc_until(
+        self: &Arc<Self>,
+        timeout: R::Instant,
+    ) -> Option<ArcMutexGuard<'_, R, T>> {
+        if self.raw.try_lock_until(timeout) {
+            // SAFETY: Locking guarantee is upheld
+            Some(unsafe { self.make_arc_guard_unchecked() })
         } else {
             None
         }
