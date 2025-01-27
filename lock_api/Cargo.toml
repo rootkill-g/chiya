@@ -12,5 +12,4 @@ serde = { version = "1.0.217", default-features = false, optional = true }
 [features]
 default = ["atomic_usize"]
 serde = ["dep:serde"]
-arc_lock = []
 atomic_usize = []

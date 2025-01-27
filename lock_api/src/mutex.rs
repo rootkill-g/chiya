@@ -16,7 +16,7 @@ use core::ptr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::raw_mutex::RawMutex;
+use crate::{raw_mutex::RawMutex, raw_mutex_fair::RawMutexFair};
 
 pub struct Mutex<R, T: ?Sized> {
     raw: R,
@@ -69,5 +69,91 @@ impl<R, T> Mutex<R, T> {
     #[inline]
     pub const fn const_new(raw_mutex: R, value: T) -> Mutex<R, T> {
         Self::from_raw(raw_mutex, value)
+    }
+}
+
+impl<R: RawMutex, T: ?Sized> Mutex<R, T> {
+    /// Creates a new `MutexGuard` without checking if the mutex is locked
+    // NOTE: This method can only be called if the thread logically holds the lock
+    #[inline]
+    pub unsafe fn make_guard_unchecked(&self) -> MutexGuard<'_, R, T> {
+        unsafe {
+            MutexGuard {
+                mutex: self,
+                marker: PhantomData,
+            }
+        }
+    }
+
+    /// Acquires a mutex, blocking the current thread until it is able to achieve the lock
+    #[inline]
+    pub fn lock(&self) -> MutexGuard<'_, R, T> {
+        self.raw.lock();
+
+        // SAFETY: The lock is held, as required
+        unsafe { self.make_guard_unchecked() }
+    }
+
+    /// Attempts to acquire this lock
+    /// If the lock cannot be acquired at this time, then `None` is returned
+    /// Otherwise an RAII guard is returned. The lock will be unlocked when the guard is dropped
+    //
+    // NOTE: This function does not block
+    #[inline]
+    pub fn try_lock(&self) -> Option<MutexGuard<'_, R, T>> {
+        if self.raw.try_lock() {
+            // SAFETY: The lock is held, as required
+            Some(unsafe { self.make_guard_unchecked() })
+        } else {
+            None
+        }
+    }
+
+    /// Returns a mutable reference to the underlying data
+    /// Since this call borrows the `Mutex` mutably, no actual locking need to take place
+    /// - The mutable borrow statically guarantees no lock exist
+    #[inline]
+    pub fn get_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.data.get() }
+    }
+
+    /// Checks whether the mutex is currently locked
+    #[inline]
+    pub fn is_locked(&self) -> bool {
+        self.raw.is_locked()
+    }
+
+    /// Forcibly unlocks the mutex
+    #[inline]
+    pub unsafe fn force_unlock(&self) {
+        unsafe {
+            self.raw.unlock();
+        }
+    }
+
+    /// Returns the underlying raw mutex object
+    #[inline]
+    pub unsafe fn raw(&self) -> &R {
+        &self.raw
+    }
+
+    /// Returns the raw pointer to the underlying data
+    // NOTE: This is useful when combined with `mem::forget` to hold a lock without the need to
+    // maintain a `MutexGuard` object alive, for example when dealing with FFI
+    #[inline]
+    pub fn data_ptr(&self) -> *mut T {
+        self.data.get()
+    }
+}
+
+impl<R: RawMutexFair, T: ?Sized> Mutex<R, T> {
+    /// Forcibly unlocks the mutex using a fair unlock protocol
+    // NOTE: This is useful when combined with `mem::forget` to hold a lock without the need to
+    // maintain a `MutexGuard` object alive, for example when dealing with FFI
+    #[inline]
+    pub unsafe fn force_unlock_fair(&self) {
+        unsafe {
+            self.raw.unlock_fair();
+        }
     }
 }
