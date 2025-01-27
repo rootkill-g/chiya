@@ -4,5 +4,7 @@
 #![warn(missing_docs)]
 
 mod mutex;
+mod raw_mutex;
+mod raw_mutex_fair;
+mod raw_mutex_timed;
 mod rwlock;
-
