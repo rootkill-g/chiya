@@ -15,3 +15,15 @@ use core::ptr;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::raw_mutex::RawMutex;
+
+pub struct Mutex<R, T: ?Sized> {
+    raw: R,
+    data: UnsafeCell<T>,
+}
+
+unsafe impl<R: RawMutex + Send, T: ?Sized> Send for Mutex<R, T> {}
+unsafe impl<R: RawMutex + Sync, T: ?Sized> Sync for Mutex<R, T> {}
+
+}
