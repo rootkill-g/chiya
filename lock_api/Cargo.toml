@@ -10,6 +10,7 @@ keywords.workspace = true
 serde = { version = "1.0.217", default-features = false, optional = true }
 
 [features]
-default = ["atomic_usize"]
+default = ["atomic_usize", "arc_lock"]
 serde = ["dep:serde"]
+arc_lock = []
 atomic_usize = []
