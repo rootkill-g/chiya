@@ -16,7 +16,7 @@ use core::ptr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{raw_mutex::RawMutex, raw_mutex_fair::RawMutexFair};
+use crate::{raw_mutex::RawMutex, raw_mutex_fair::RawMutexFair, raw_mutex_timed::RawMutexTimed};
 
 pub struct Mutex<R, T: ?Sized> {
     raw: R,
@@ -154,6 +154,30 @@ impl<R: RawMutexFair, T: ?Sized> Mutex<R, T> {
     pub unsafe fn force_unlock_fair(&self) {
         unsafe {
             self.raw.unlock_fair();
+        }
+    }
+}
+
+impl<R: RawMutexTimed, T: ?Sized> Mutex<R, T> {
+    /// Attempts to acquire this lock until a timeout is reached
+    #[inline]
+    pub fn try_lock_for(&self, timeout: R::Duration) -> Option<MutexGuard<'_, R, T>> {
+        if self.raw.try_lock_for(timeout) {
+            // SAFETY: The lock is held, as required
+            Some(unsafe { self.make_guard_unchecked() })
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this lock until a timeout is reached
+    #[inline]
+    pub fn try_lock_until(&self, timeout: R::Instant) -> Option<MutexGuard<'_, R, T>> {
+        if self.raw.try_lock_until(timeout) {
+            // SAFETY: The lock is held, as required
+            Some(unsafe { self.make_guard_unchecked() })
+        } else {
+            None
         }
     }
 }
