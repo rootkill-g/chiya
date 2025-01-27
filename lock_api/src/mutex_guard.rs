@@ -1,6 +1,6 @@
 use core::{marker::PhantomData, mem};
 
-use crate::{mutex::Mutex, raw_mutex::RawMutex};
+use crate::{mutex::Mutex, raw_mutex::RawMutex, raw_mutex_fair::RawMutexFair};
 
 /// An RAII implementation of a "scoped lock" of a mutex. When this structure is dropeed (falls out
 /// of scope), the lock will be unlocked
@@ -78,5 +78,43 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
         mem::forget(s);
 
         r
+    }
+}
+
+impl<'a, R: RawMutexFair + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
+    /// Unlocks the mutex using a fair unlock protocol
+    #[inline]
+    pub fn unlock_fair(s: Self) {
+        // SAFETY: A `MutexGuard` always holds the lock
+        unsafe {
+            s.mutex.raw.unlock_fair();
+        }
+
+        mem::forget(s);
+    }
+
+    /// Temporarily unlocks the mutex to execute the given function
+    #[inline]
+    pub fn unlocked_fair<F, U>(s: &mut Self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        // SAFETY: A `MutexGuard` always holds the lock
+        unsafe {
+            s.mutex.raw.unlock_fair();
+        }
+
+        defer!(s.mutex.raw.lock());
+
+        f()
+    }
+
+    /// Temporarily yields the mutex to a waiting thread if there is one
+    #[inline]
+    pub fn bump(s: &mut Self) {
+        // SAFETY: A `MutexGuard` always holds the lock
+        unsafe {
+            s.mutex.raw.bump();
+        }
     }
 }
