@@ -53,3 +53,21 @@ impl<R: RawMutex, T> Mutex<R, T> {
         self.data.into_inner()
     }
 }
+
+impl<R, T> Mutex<R, T> {
+    /// Creates a new mutex based on a pre-existing raw mutex
+    #[inline]
+    pub const fn from_raw(raw_mutex: R, value: T) -> Mutex<R, T> {
+        Mutex {
+            raw: raw_mutex,
+            data: UnsafeCell::new(value),
+        }
+    }
+
+    /// Creates a new mutex based on a pre-existing raw mutex
+    /// This allows creating a mutex in a constant context on stable Rust
+    #[inline]
+    pub const fn const_new(raw_mutex: R, value: T) -> Mutex<R, T> {
+        Self::from_raw(raw_mutex, value)
+    }
+}
